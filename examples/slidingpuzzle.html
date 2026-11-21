@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数字华容道</title>
+<style>
+@page { size: A4; margin: 0 }
+* { box-sizing: border-box }
+html, body { margin: 0; padding: 0 }
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  color: #1d1d1f;
+  background: #ececec;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  margin: 0 auto 8mm;
+  display: flex;
+  flex-direction: column;
+  gap: 6mm;
+}
+.page h1 { margin: 0; font-size: 9mm; letter-spacing: 1mm; }
+.page .sub { margin: 2mm 0 0; font-size: 4mm; color: #666; }
+.note { margin: 0; font-size: 4mm; line-height: 1.7; color: #333; }
+.board {
+  display: grid;
+  gap: 1.2mm;
+  width: min(150mm, 100%);
+  margin: 2mm auto 0;
+  padding: 1.2mm;
+  background: #1d1d1f;
+  border: 2.5px solid #1d1d1f;
+}
+.corner { background: #fff; }
+.col-label, .row-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #777;
+  font-size: 3.4mm;
+}
+.cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-weight: 700;
+  color: #111;
+}
+.cell.blank { background: #f2f2f2; }
+.cards {
+  display: grid;
+  gap: 3mm;
+  width: 100%;
+  margin-top: 2mm;
+}
+.card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed #555;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1mm;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 1.5mm;
+  border: 0.4mm solid #e2e2e2;
+  border-radius: 1mm;
+}
+.card .num { font-size: 14mm; font-weight: 700; line-height: 1; }
+.card .pos { font-size: 3.2mm; color: #888; }
+.hint { margin: 0; font-size: 3.8mm; color: #666; }
+.footer { margin-top: auto; font-size: 3.2mm; color: #999; }
+@media print {
+  body { background: #fff; }
+  .page { margin: 0; page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+}
+</style>
+</head>
+<body>
+<section class="page">
+<header><h1>数字华容道</h1><p class="sub">3×3 数字华容道 · 可打印棋盘</p></header>
+<div class="board" style="grid-template-columns: 10mm repeat(3, 1fr); font-size: 16mm;">
+<div class="corner"></div>
+<div class="col-label">1</div>
+<div class="col-label">2</div>
+<div class="col-label">3</div>
+<div class="row-label">1</div>
+<div class="cell">7</div>
+<div class="cell">3</div>
+<div class="cell">2</div>
+<div class="row-label">2</div>
+<div class="cell">8</div>
+<div class="cell blank"></div>
+<div class="cell">6</div>
+<div class="row-label">3</div>
+<div class="cell">4</div>
+<div class="cell">5</div>
+<div class="cell">1</div>
+</div>
+<p class="note"><strong>目标布局：</strong>从左到右、从上到下依次为 1 到 8，最后一个格子为空格。</p>
+<p class="note"><strong>玩法：</strong>每次只能把与空格相邻的数字方块滑入空格，直到恢复顺序排列。</p>
+<p class="footer">slidingpuzzle · 打印建议：A4 纵向 · 实际大小（100%），不要缩放。</p>
+</section>
+<section class="page">
+<header><h1>方块 · 数字华容道</h1><p class="sub">沿虚线剪下，按棋盘顺序摆放即可拼玩</p></header>
+<div class="cards" style="grid-template-columns: repeat(3, 1fr);">
+<div class="card"><span class="num">7</span><span class="pos">第 1 行 · 第 1 列</span></div>
+<div class="card"><span class="num">3</span><span class="pos">第 1 行 · 第 2 列</span></div>
+<div class="card"><span class="num">2</span><span class="pos">第 1 行 · 第 3 列</span></div>
+<div class="card"><span class="num">8</span><span class="pos">第 2 行 · 第 1 列</span></div>
+<div class="card"><span class="num">6</span><span class="pos">第 2 行 · 第 3 列</span></div>
+<div class="card"><span class="num">4</span><span class="pos">第 3 行 · 第 1 列</span></div>
+<div class="card"><span class="num">5</span><span class="pos">第 3 行 · 第 2 列</span></div>
+<div class="card"><span class="num">1</span><span class="pos">第 3 行 · 第 3 列</span></div>
+</div>
+<p class="hint">剪切线为卡片四周的虚线，请沿虚线剪下；建议使用 120g 以上纸张，避免透光。</p>
+<p class="footer">slidingpuzzle · 共 8 张数字卡片 + 1 个空格。</p>
+</section>
+</body>
+</html>

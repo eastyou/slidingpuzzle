@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数字华容道</title>
+<style>
+* { box-sizing: border-box }
+html, body { height: 100% }
+body {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #eef2f7, #dfe7f1);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  color: #1d1d1f;
+}
+.app {
+  width: min(92vw, 460px);
+  padding: 22px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(17, 34, 68, 0.14);
+}
+h1 { margin: 0 0 14px; font-size: 21px; text-align: center; letter-spacing: 1px; }
+.stats { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #444; }
+.stats b { color: #0b63ce; font-variant-numeric: tabular-nums; }
+.board {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  background: #1d1d1f;
+  border-radius: 10px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tile {
+  aspect-ratio: 1 / 1;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: clamp(22px, 9vw, 40px);
+  font-weight: 700;
+  cursor: default;
+  transition: background .12s ease, transform .08s ease;
+}
+.tile.adjacent { background: #eaf2ff; cursor: pointer; }
+.tile.adjacent:hover { background: #dbe9ff; }
+.tile.adjacent:active { transform: scale(.96); }
+.blank { background: #1d1d1f; }
+.controls { display: flex; gap: 10px; margin-top: 16px; }
+.controls button {
+  flex: 1;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 15px;
+  border-radius: 10px;
+  border: 1px solid #c9d3e0;
+  background: #f7f9fc;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+.controls button:hover { background: #eef3fa; }
+.status { min-height: 20px; margin: 12px 0 0; text-align: center; font-size: 14px; color: #0b7a3b; }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>数字华容道</h1>
+  <div class="stats">
+    <span>步数：<b id="moves">0</b></span>
+    <span>计时：<b id="timer">00:00</b></span>
+  </div>
+  <div id="board" class="board" role="grid" aria-label="3×3 数字华容道棋盘"></div>
+  <div class="controls">
+    <button id="restart" type="button">重开</button>
+    <button id="shuffle" type="button">打乱</button>
+  </div>
+  <p class="status" id="status" aria-live="polite">点击与空格相邻的方块开始滑动。参考步数下限：12</p>
+</main>
+<script>
+(function () {
+  "use strict";
+  var DATA = {"size":3,"board":[7,3,2,8,0,6,4,5,1],"goal":[1,2,3,4,5,6,7,8,0],"title":"数字华容道"};
+  var SIZE = DATA.size;
+  var GOAL = DATA.goal;
+  var INITIAL = DATA.board.slice();
+  var state = INITIAL.slice();
+  var moveCount = 0;
+  var elapsed = 0;
+  var timerId = null;
+  var finished = false;
+
+  var boardEl = document.getElementById("board");
+  var movesEl = document.getElementById("moves");
+  var timerEl = document.getElementById("timer");
+  var statusEl = document.getElementById("status");
+
+  function formatTime(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return (m < 10 ? "0" + m : String(m)) + ":" + (s < 10 ? "0" + s : String(s));
+  }
+
+  function updateStats() {
+    movesEl.textContent = String(moveCount);
+    timerEl.textContent = formatTime(elapsed);
+  }
+
+  function stopTimer() {
+    if (timerId !== null) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function startTimer() {
+    if (timerId !== null) {
+      return;
+    }
+    timerId = setInterval(function () {
+      elapsed += 1;
+      timerEl.textContent = formatTime(elapsed);
+    }, 1000);
+  }
+
+  function resetStats() {
+    stopTimer();
+    moveCount = 0;
+    elapsed = 0;
+    finished = false;
+    statusEl.textContent = "";
+    updateStats();
+  }
+
+  function indexAt(row, col) {
+    return row * SIZE + col;
+  }
+
+  function adjacentIndex(blankIndex, tileIndex) {
+    var blankRow = Math.floor(blankIndex / SIZE);
+    var blankCol = blankIndex % SIZE;
+    var row = Math.floor(tileIndex / SIZE);
+    var col = tileIndex % SIZE;
+    return Math.abs(blankRow - row) + Math.abs(blankCol - col) === 1;
+  }
+
+  function blankIndex() {
+    return state.indexOf(0);
+  }
+
+  function isSolved() {
+    for (var i = 0; i < state.length; i += 1) {
+      if (state[i] !== GOAL[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function render() {
+    var blank = blankIndex();
+    boardEl.textContent = "";
+    for (var i = 0; i < state.length; i += 1) {
+      var value = state[i];
+      if (value === 0) {
+        var empty = document.createElement("div");
+        empty.className = "blank";
+        empty.setAttribute("aria-hidden", "true");
+        boardEl.appendChild(empty);
+        continue;
+      }
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "tile" + (adjacentIndex(blank, i) ? " adjacent" : "");
+      tile.textContent = String(value);
+      tile.setAttribute("aria-label", "方块 " + value);
+      tile.dataset.index = String(i);
+      tile.addEventListener("click", onTileClick);
+      boardEl.appendChild(tile);
+    }
+  }
+
+  function onTileClick(event) {
+    var tile = event.currentTarget;
+    var index = Number(tile.dataset.index);
+    var blank = blankIndex();
+    if (!adjacentIndex(blank, index)) {
+      return;
+    }
+    state[blank] = state[index];
+    state[index] = 0;
+    moveCount += 1;
+    if (!finished) {
+      startTimer();
+    }
+    updateStats();
+    render();
+    if (isSolved()) {
+      finished = true;
+      stopTimer();
+      statusEl.textContent = "完成！共 " + moveCount + " 步，用时 " + formatTime(elapsed);
+    }
+  }
+
+  function resetTo(values) {
+    state = values.slice();
+    resetStats();
+    render();
+  }
+
+  function shuffleBoard() {
+    var values = GOAL.slice();
+    var blank = values.indexOf(0);
+    var attempts = 0;
+    do {
+      for (var step = 0; step < SIZE * SIZE * 30; step += 1) {
+        var row = Math.floor(blank / SIZE);
+        var col = blank % SIZE;
+        var options = [];
+        if (row > 0) { options.push(indexAt(row - 1, col)); }
+        if (row < SIZE - 1) { options.push(indexAt(row + 1, col)); }
+        if (col > 0) { options.push(indexAt(row, col - 1)); }
+        if (col < SIZE - 1) { options.push(indexAt(row, col + 1)); }
+        var pick = options[Math.floor(Math.random() * options.length)];
+        values[blank] = values[pick];
+        values[pick] = 0;
+        blank = pick;
+      }
+      attempts += 1;
+    } while (isSame(values, GOAL) && attempts < 20);
+    resetTo(values);
+  }
+
+  function isSame(left, right) {
+    for (var i = 0; i < left.length; i += 1) {
+      if (left[i] !== right[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  document.getElementById("restart").addEventListener("click", function () {
+    resetTo(INITIAL);
+  });
+  document.getElementById("shuffle").addEventListener("click", shuffleBoard);
+
+  boardEl.style.gridTemplateColumns = "repeat(" + SIZE + ", 1fr)";
+  resetTo(INITIAL);
+})();
+</script>
+</body>
+</html>
